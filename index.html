@@ -2,384 +2,117 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Envasado - Juego de Niveles</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#f0fdf4">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Envasado">
-    
-    <!-- Manifest Inline (Data URI) para que sea instalable -->
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22El%20Envasado%20Juego%22,%22short_name%22:%22Envasado%22,%22start_url%22:%22index.html%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f0fdf4%22,%22theme_color%22:%22%23166534%22,%22icons%22:[{%22src%22:%22https://em-content.zobj.net/source/apple/354/package_1f4e6.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
-
-    <!-- Librerías externas: Tailwind para diseño y Confetti para efectos -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego del Envasado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
-        
-        body {
-            font-family: 'Fredoka', sans-serif;
-            background-color: #f0fdf4;
-            overflow: hidden;
-            user-select: none;
-            touch-action: manipulation;
-        }
-
-        /* Animaciones de las partes de la caja */
-        .box-part {
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-            transform: scale(0.9);
-        }
-        
-        .box-part.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .cardboard {
-            background-color: #d4a373;
-            border: 2px solid #9c6644;
-            position: absolute;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-        }
-        
-        .texture {
-             background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
-        }
-
-        .perspective-container {
-            perspective: 800px;
-        }
-
-        .game-char {
-            transition: transform 0.3s;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
-            cursor: pointer;
-        }
-        
-        .shake {
-            animation: shake 0.5s;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translate(0, 0); }
-            10%, 30%, 50%, 70%, 90% { transform: translate(-2px, -2px); }
-            20%, 40%, 60%, 80% { transform: translate(2px, 2px); }
-        }
-
-        .level-badge {
-            background: linear-gradient(135deg, #166534 0%, #15803d 100%);
-            box-shadow: 0 4px 10px rgba(22, 101, 52, 0.2);
-        }
-
-        .progress-bar-inner {
-            transition: width 0.5s ease-in-out;
-        }
-        
-        .safe-area-top {
-            padding-top: env(safe-area-inset-top);
-        }
+        body { background-color: #f0fdf4; font-family: sans-serif; overflow: hidden; }
+        .box-part { transition: all 0.4s ease; opacity: 0; transform: scale(0.8); }
+        .box-part.visible { opacity: 1; transform: scale(1); }
+        .cardboard { background-color: #d4a373; border: 2px solid #9c6644; position: absolute; }
     </style>
 </head>
-<body id="game-body" class="h-screen flex flex-col items-center justify-center p-4 safe-area-top">
+<body class="h-screen flex flex-col items-center justify-center p-4">
 
-    <!-- Cabecera de Niveles y Puntaje -->
-    <div class="w-full max-w-4xl flex flex-col gap-3 mb-4 px-2">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="level-badge text-white px-4 py-1 rounded-2xl flex flex-col items-center">
-                    <span class="text-[10px] uppercase font-bold opacity-80">Nivel</span>
-                    <span id="level-display" class="text-xl font-bold">1</span>
-                </div>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-green-800">📦 Envasado</h1>
-                    <div id="difficulty-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-green-200 text-green-800 inline-block uppercase tracking-tighter">Básico</div>
-                </div>
-            </div>
-            
-            <div class="flex gap-2">
-                 <div class="bg-amber-50 p-2 rounded-xl border border-amber-200 flex flex-col items-center min-w-[65px]">
-                    <span class="text-[8px] text-amber-600 font-bold uppercase">Récord</span>
-                    <span id="highscore-display" class="text-lg font-bold text-amber-600">0</span>
-                </div>
-                <div class="bg-white p-2 rounded-xl border border-green-100 flex flex-col items-center min-w-[65px]">
-                    <span class="text-[8px] text-gray-500 font-bold uppercase">Puntos</span>
-                    <span id="score-display" class="text-lg font-bold text-green-600">0</span>
-                </div>
-            </div>
-        </div>
+    <!-- Marcador -->
+    <div class="mb-6 text-center">
+        <h1 class="text-3xl font-bold text-green-800">📦 EL ENVASADO</h1>
+        <p class="text-green-600 font-bold uppercase tracking-widest text-sm" id="level-tag">Nivel 1</p>
+        <div class="mt-2 text-xl font-bold">Puntos: <span id="score">0</span></div>
+    </div>
+
+    <!-- Escena de la Caja -->
+    <div class="relative w-64 h-64 bg-white rounded-3xl shadow-xl flex items-center justify-center overflow-hidden border-4 border-green-200">
+        <div id="character" class="text-8xl z-10 transition-transform duration-300">😰</div>
         
-        <!-- Barra de Progreso del Nivel Actual -->
-        <div class="w-full bg-green-200 h-3 rounded-full overflow-hidden shadow-inner relative">
-            <div id="level-progress" class="progress-bar-inner absolute top-0 left-0 h-full bg-green-600" style="width: 0%"></div>
+        <!-- Partes de la caja (se activan al fallar) -->
+        <div id="p1" class="box-part cardboard w-full bottom-0 h-1/6 z-0"></div>
+        <div id="p2" class="box-part cardboard w-full h-full bottom-0 bg-[#ccb7a3] z-0"></div>
+        <div id="p3" class="box-part cardboard h-full left-0 w-1/6 z-20"></div>
+        <div id="p4" class="box-part cardboard h-full right-0 w-1/6 z-20"></div>
+        <div id="p5" class="box-part cardboard w-full bottom-0 h-4/6 z-30 opacity-90"></div>
+        <div id="p6" class="box-part cardboard w-full h-full top-0 z-40 flex items-center justify-center bg-[#8d5c3d]">
+            <span class="text-white font-bold border-2 p-1 rounded">SELLADO</span>
         </div>
     </div>
 
-    <!-- Contenedor Principal del Juego -->
-    <div class="flex flex-col md:flex-row gap-6 items-center justify-center w-full max-w-5xl bg-white/60 backdrop-blur-md p-4 rounded-3xl shadow-2xl border border-white relative">
+    <!-- Área de Juego -->
+    <div class="mt-8 w-full max-w-md text-center">
+        <div id="cat" class="text-xs font-bold text-green-700 bg-green-100 inline-block px-3 py-1 rounded-full mb-4">CATEGORÍA</div>
+        <div id="word" class="flex justify-center gap-2 mb-8 text-3xl font-bold text-green-900 tracking-widest"></div>
+        <div id="keyboard" class="grid grid-cols-7 gap-1"></div>
         
-        <!-- Escena de la Caja y el Personaje -->
-        <div class="relative w-48 h-48 md:w-72 md:h-72 perspective-container flex items-center justify-center bg-white rounded-xl shadow-inner border-2 border-green-100 overflow-hidden shrink-0" id="scene-container">
-            <div id="character" class="text-6xl md:text-8xl z-10 game-char relative" onclick="pokeCharacter()">😰</div>
-
-            <!-- Partes de la caja (se activan con errores) -->
-            <div id="part-1" class="box-part cardboard texture w-full bottom-0 z-0" style="display:none; height: 15%;"></div>
-            <div id="part-2" class="box-part cardboard texture w-full z-0" style="display:none; height: 90%; bottom: 0; background-color: #ccb7a3;"></div>
-            <div id="part-3" class="box-part cardboard texture h-full left-0 bottom-0 z-20" style="display:none; width: 15%;"></div>
-            <div id="part-4" class="box-part cardboard texture h-full right-0 bottom-0 z-20" style="display:none; width: 15%;"></div>
-            <div id="part-5" class="box-part cardboard texture w-full bottom-0 z-30" style="display:none; opacity: 0.85; height: 75%;"></div>
-            <div id="part-6" class="box-part cardboard texture w-full h-full top-0 z-40 flex items-center justify-center" style="display:none; background-color: #8d5c3d;">
-                <span class="text-white font-bold text-xl rotate-[-15deg] border-2 border-white p-2 rounded uppercase">Cerrado</span>
-            </div>
-        </div>
-
-        <div class="flex flex-col items-center w-full">
-            <!-- Pista: Categoría de la palabra -->
-            <div class="mb-4 bg-green-100 text-green-800 px-6 py-2 rounded-2xl text-sm font-bold shadow-sm flex items-center gap-2">
-                <span class="text-xs opacity-60">CATEGORÍA:</span>
-                <span id="category-display" class="uppercase tracking-widest text-lg">Cargando...</span>
-            </div>
-
-            <!-- Letras de la palabra -->
-            <div id="word-display" class="flex flex-wrap gap-1 justify-center mb-6 min-h-[50px]"></div>
-
-            <div id="message" class="h-6 text-sm font-bold mb-2 text-center text-gray-500 uppercase tracking-widest"></div>
-
-            <!-- Teclado Visual -->
-            <div id="keyboard" class="flex flex-wrap gap-1 justify-center max-w-sm mb-4"></div>
-
-            <!-- Botones de Acción -->
-            <div class="flex gap-3">
-                <button id="restart-btn" onclick="nextWord()" class="hidden px-8 py-3 bg-green-600 text-white rounded-full font-bold shadow-lg transition transform hover:scale-105 active:scale-95">
-                    PRÓXIMO RETO
-                </button>
-                <button id="reset-btn" onclick="fullReset()" class="hidden px-8 py-3 bg-red-500 text-white rounded-full font-bold shadow-lg transition transform hover:scale-105 active:scale-95">
-                    VOLVER A EMPEZAR
-                </button>
-            </div>
-        </div>
+        <button id="next-btn" onclick="init()" class="hidden mt-6 bg-green-600 text-white px-8 py-3 rounded-full font-bold shadow-lg">SIGUIENTE PALABRA</button>
     </div>
 
     <script>
-        // --- MOTOR DE AUDIO (Web Audio API) ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playTone(freq, type, duration, vol = 0.05) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        const words = [
+            {w: "CASA", c: "HOGAR"}, {w: "PERRO", c: "ANIMAL"}, {w: "SOL", c: "CIELO"},
+            {w: "MANZANA", c: "FRUTA"}, {w: "MEXICO", c: "PAIS"}, {w: "PIANO", c: "MUSICA"},
+            {w: "AVION", c: "TRANSPORTE"}, {w: "FUTBOL", c: "DEPORTE"}, {w: "QUESO", c: "COMIDA"},
+            {w: "BIBLIOTECA", c: "LUGAR"}, {w: "ASTRONAUTA", c: "OFICIO"}, {w: "ELEFANTE", c: "ANIMAL"}
+        ];
+
+        let secret, letters, fails, score = 0, level = 1;
+
+        function init() {
+            const item = words[Math.floor(Math.random() * words.length)];
+            secret = item.w;
+            document.getElementById('cat').textContent = item.c;
+            letters = [];
+            fails = 0;
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('character').textContent = "😰";
+            for(let i=1; i<=6; i++) document.getElementById('p'+i).classList.remove('visible');
+            render();
+            renderKeys();
         }
 
-        const sounds = {
-            click: () => playTone(600, 'sine', 0.1),
-            correct: () => { playTone(800, 'sine', 0.1); setTimeout(() => playTone(1200, 'sine', 0.2), 100); },
-            wrong: () => { playTone(150, 'sawtooth', 0.3); },
-            levelup: () => { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.4), i * 100)); },
-            win: () => [523, 659, 784].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.3), i * 150)),
-            lose: () => [300, 200, 100].forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.4), i * 200))
-        };
-
-        // --- SISTEMA DE DIFICULTAD Y DATOS ---
-        const levels = {
-            1: { 
-                title: "Básico",
-                target: 3,
-                words: [
-                    { word: "PERRO", cat: "Animal" },
-                    { word: "MANZANA", cat: "Fruta" },
-                    { word: "AZUL", cat: "Color" },
-                    { word: "GATO", cat: "Animal" },
-                    { word: "SOL", cat: "Naturaleza" }
-                ]
-            },
-            2: { 
-                title: "Intermedio",
-                target: 3,
-                words: [
-                    { word: "COLOMBIA", cat: "País" },
-                    { word: "DENTISTA", cat: "Profesión" },
-                    { word: "TENEDOR", cat: "Cocina" },
-                    { word: "MARTILLO", cat: "Herramienta" },
-                    { word: "ESPEJO", cat: "Objeto" }
-                ]
-            },
-            3: { 
-                title: "Avanzado",
-                target: 4,
-                words: [
-                    { word: "JUPITER", cat: "Planeta" },
-                    { word: "ARQUITECTO", cat: "Profesión" },
-                    { word: "HELICOPTERO", cat: "Transporte" },
-                    { word: "BIBLIOTECA", cat: "Lugar" },
-                    { word: "ORNITORRINCO", cat: "Animal" }
-                ]
-            },
-            4: { 
-                title: "Experto",
-                target: 2,
-                words: [
-                    { word: "FOTOSINTESIS", cat: "Ciencia" },
-                    { word: "ESTERNOCLEIDOMASTOIDEO", cat: "Anatomía" },
-                    { word: "ANTROPOLOGO", cat: "Profesión" },
-                    { word: "SARCASMO", cat: "Concepto" }
-                ]
-            }
-        };
-
-        // Variables de estado
-        let currentLevel = 1;
-        let solvedInLevel = 0;
-        let currentData = {}, guessedLetters = [], wrongGuesses = 0, isGameOver = false;
-        let score = 0, highScore = parseInt(localStorage.getItem('boxGameHS')) || 0;
-
-        // Elementos del DOM
-        const wordDisplay = document.getElementById('word-display');
-        const keyboardDiv = document.getElementById('keyboard');
-        const messageDiv = document.getElementById('message');
-        const characterDiv = document.getElementById('character');
-        const restartBtn = document.getElementById('restart-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const levelDisplay = document.getElementById('level-display');
-        const levelProgress = document.getElementById('level-progress');
-        const categoryDisplay = document.getElementById('category-display');
-        const difficultyBadge = document.getElementById('difficulty-badge');
-
-        // Actualizar UI
-        function updateStats() {
-            document.getElementById('score-display').textContent = score;
-            document.getElementById('highscore-display').textContent = highScore;
-            levelDisplay.textContent = currentLevel;
-            
-            const levelSet = levels[currentLevel] || levels[4];
-            difficultyBadge.textContent = levelSet.title;
-            
-            const target = levelSet.target;
-            const progress = (solvedInLevel / target) * 100;
-            levelProgress.style.width = `${Math.min(progress, 100)}%`;
+        function render() {
+            const display = secret.split('').map(l => letters.includes(l) ? l : "_").join(" ");
+            document.getElementById('word').textContent = display;
+            if(!display.includes("_")) win();
         }
 
-        // Iniciar nueva palabra
-        function initGame() {
-            const levelSet = levels[currentLevel] || levels[4];
-            const randomItem = levelSet.words[Math.floor(Math.random() * levelSet.words.length)];
-            
-            currentData = { word: randomItem.word.toUpperCase(), category: randomItem.cat };
-            guessedLetters = []; wrongGuesses = 0; isGameOver = false;
-            
-            messageDiv.textContent = "Adivina la palabra";
-            messageDiv.className = "h-6 text-sm font-bold mb-2 text-center text-gray-400 uppercase tracking-widest";
-            characterDiv.textContent = "😰";
-            categoryDisplay.textContent = currentData.category;
-            
-            restartBtn.classList.add('hidden');
-            resetBtn.classList.add('hidden');
-            
-            // Ocultar todas las partes de la caja
-            for(let i=1; i<=6; i++) {
-                const p = document.getElementById(`part-${i}`);
-                if(p) { p.style.display = 'none'; p.classList.remove('visible'); }
-            }
-            renderWord(); renderKeyboard(); updateStats();
-        }
-
-        function nextWord() {
-            initGame();
-        }
-
-        function fullReset() {
-            currentLevel = 1;
-            solvedInLevel = 0;
-            score = 0;
-            initGame();
-        }
-
-        // Dibujar espacios de letras
-        function renderWord() {
-            wordDisplay.innerHTML = '';
-            let won = true;
-            currentData.word.split('').forEach(l => {
-                const b = document.createElement('div');
-                b.className = "w-8 h-10 md:w-10 md:h-12 flex items-center justify-center text-xl font-bold border-b-2 border-green-700 bg-white rounded shadow-sm text-green-900";
-                if (guessedLetters.includes(l)) b.textContent = l;
-                else { b.textContent = ""; won = false; }
-                wordDisplay.appendChild(b);
-            });
-            if (won && currentData.word.length > 0) handleWin();
-        }
-
-        // Dibujar teclado interactivo
-        function renderKeyboard() {
-            keyboardDiv.innerHTML = '';
+        function renderKeys() {
+            const kb = document.getElementById('keyboard');
+            kb.innerHTML = '';
             "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split('').forEach(l => {
-                const b = document.createElement('button');
-                b.textContent = l;
-                b.className = `w-8 h-9 md:w-10 md:h-11 rounded font-bold text-xs shadow-sm border-b-2 ${guessedLetters.includes(l) ? 'bg-gray-200 text-gray-300 border-none' : 'bg-white text-green-700 border-green-200 active:bg-green-100'}`;
-                b.disabled = guessedLetters.includes(l) || isGameOver;
-                b.onclick = () => {
-                    sounds.click();
-                    guessedLetters.push(l);
-                    if (currentData.word.includes(l)) { 
-                        sounds.correct(); 
-                        renderWord(); 
-                    } else { 
-                        wrongGuesses++; 
-                        sounds.wrong(); 
-                        const part = document.getElementById(`part-${wrongGuesses}`);
-                        if(part) { part.style.display = 'flex'; setTimeout(() => part.classList.add('visible'), 10); }
-                        if (wrongGuesses >= 6) handleLoss();
+                const btn = document.createElement('button');
+                btn.textContent = l;
+                btn.className = "bg-white p-2 rounded shadow font-bold text-green-700 disabled:opacity-30";
+                btn.disabled = letters.includes(l) || fails >= 6;
+                btn.onclick = () => {
+                    letters.push(l);
+                    if(!secret.includes(l)) {
+                        fails++;
+                        document.getElementById('p'+fails).classList.add('visible');
+                        if(fails >= 6) lose();
                     }
-                    renderKeyboard();
+                    render();
+                    renderKeys();
                 };
-                keyboardDiv.appendChild(b);
+                kb.appendChild(btn);
             });
         }
 
-        function handleWin() {
-            isGameOver = true;
-            solvedInLevel++;
-            score += (currentLevel * 100);
-            if (score > highScore) { highScore = score; localStorage.setItem('boxGameHS', highScore); }
-            
-            const target = levels[currentLevel]?.target || 5;
-            
-            if (solvedInLevel >= target) {
-                sounds.levelup();
-                messageDiv.textContent = "¡HAS SUBIDO DE NIVEL!";
-                messageDiv.className = "h-6 text-sm font-bold mb-2 text-center text-green-600 animate-bounce";
-                currentLevel++;
-                solvedInLevel = 0;
-                confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } });
-            } else {
-                sounds.win();
-                messageDiv.textContent = "¡CORRECTO!";
-                messageDiv.className = "h-6 text-sm font-bold mb-2 text-center text-blue-600";
-            }
-            
-            characterDiv.textContent = "😎";
-            restartBtn.classList.remove('hidden');
-            updateStats();
+        function win() {
+            score += 100;
+            document.getElementById('score').textContent = score;
+            document.getElementById('character').textContent = "😎";
+            document.getElementById('next-btn').classList.remove('hidden');
+            confetti();
         }
 
-        function handleLoss() {
-            isGameOver = true;
-            sounds.lose();
-            messageDiv.innerHTML = `ERA: <span class="text-red-600">${currentData.word}</span>`;
-            characterDiv.textContent = "📦";
-            resetBtn.classList.remove('hidden');
+        function lose() {
+            document.getElementById('character').textContent = "📦";
+            document.getElementById('word').textContent = secret;
+            document.getElementById('next-btn').classList.remove('hidden');
+            document.getElementById('next-btn').textContent = "REINTENTAR";
         }
 
-        function pokeCharacter() { if(!isGameOver) { sounds.click(); characterDiv.classList.add('shake'); setTimeout(() => characterDiv.classList.remove('shake'), 200); } }
-
-        // Inicialización
-        initGame();
+        init();
     </script>
 </body>
 </html>
