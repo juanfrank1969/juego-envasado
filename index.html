@@ -3,150 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Envasado - App Oficial</title>
-    
-    <!-- Configuración para Móvil (PWA) -->
-    <meta name="theme-color" content="#f0fdf4">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
+    <title>Juego del Envasado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
-        
-        body {
-            font-family: 'Fredoka', sans-serif;
-            background-color: #f0fdf4;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
-
-        .box-part {
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-            transform: scale(0.9);
-        }
-        
-        .box-part.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .cardboard {
-            background-color: #d4a373;
-            border: 2px solid #9c6644;
-            position: absolute;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
-        }
-
-        .game-char {
-            transition: transform 0.3s;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-        }
-
-        .level-badge {
-            background: linear-gradient(135deg, #166534 0%, #15803d 100%);
-        }
+        body { background-color: #f0fdf4; font-family: ui-sans-serif, system-ui, sans-serif; overflow: hidden; touch-action: manipulation; }
+        .box-part { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(20px); pointer-events: none; }
+        .box-part.visible { opacity: 1; transform: translateY(0); }
+        .cardboard { background-color: #d4a373; border: 2px solid #9c6644; position: absolute; }
+        .key-btn:active { transform: scale(0.9); background-color: #dcfce7; }
     </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center p-4">
+<body class="h-screen flex flex-col items-center justify-between p-6 pb-12">
 
-    <!-- Encabezado de Estadísticas -->
-    <div class="w-full max-w-md flex flex-col gap-2 mb-4">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="level-badge text-white px-3 py-1 rounded-xl text-center">
-                    <p class="text-[8px] uppercase font-bold opacity-80">Nivel</p>
-                    <p id="level-display" class="text-lg font-bold leading-none">1</p>
-                </div>
-                <h1 class="text-xl font-bold text-green-800">📦 ENVASADO</h1>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] text-gray-500 font-bold uppercase">Puntos</p>
-                <p id="score-display" class="text-xl font-bold text-green-600">0</p>
-            </div>
-        </div>
-        <!-- Barra de Progreso -->
-        <div class="w-full bg-green-200 h-2 rounded-full overflow-hidden">
-            <div id="progress-bar" class="h-full bg-green-600 transition-all duration-500" style="width: 0%"></div>
+    <!-- Encabezado -->
+    <div class="text-center">
+        <h1 class="text-3xl font-black text-green-800 tracking-tighter">📦 EL ENVASADO</h1>
+        <div class="bg-white px-4 py-1 rounded-full shadow-sm inline-block mt-2">
+            <span class="text-sm font-bold text-green-600">PUNTOS: <span id="score">0</span></span>
         </div>
     </div>
 
-    <!-- Área de la Caja -->
-    <div class="relative w-64 h-64 bg-white rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden border-2 border-green-100">
-        <div id="character" class="text-7xl md:text-8xl z-10 game-char">😰</div>
-
-        <!-- Partes de la Caja -->
-        <div id="p1" class="box-part cardboard w-full bottom-0 h-1/6 z-0"></div>
+    <!-- Contenedor Visual -->
+    <div class="relative w-64 h-64 bg-white rounded-[2rem] shadow-2xl flex items-center justify-center overflow-hidden border-8 border-green-50">
+        <div id="character" class="text-8xl z-10 transition-all duration-500">😰</div>
+        
+        <!-- Elementos de la Caja -->
+        <div id="p1" class="box-part cardboard w-full bottom-0 h-1/5 z-0"></div>
         <div id="p2" class="box-part cardboard w-full h-full bottom-0 bg-[#ccb7a3] z-0"></div>
-        <div id="p3" class="box-part cardboard h-full left-0 w-1/6 z-20"></div>
-        <div id="p4" class="box-part cardboard h-full right-0 w-1/6 z-20"></div>
-        <div id="p5" class="box-part cardboard w-full bottom-0 h-4/6 z-30 opacity-90"></div>
+        <div id="p3" class="box-part cardboard h-full left-0 w-1/5 z-20"></div>
+        <div id="p4" class="box-part cardboard h-full right-0 w-1/5 z-20"></div>
+        <div id="p5" class="box-part cardboard w-full bottom-0 h-3/5 z-30 opacity-95"></div>
         <div id="p6" class="box-part cardboard w-full h-full top-0 z-40 flex items-center justify-center bg-[#8d5c3d]">
-            <span class="text-white font-bold border-2 p-1 rounded text-xs">SELLADO</span>
+            <div class="border-4 border-white/30 p-2 rounded-lg">
+                <span class="text-white font-black text-xl tracking-widest uppercase">Sellado</span>
+            </div>
         </div>
     </div>
 
     <!-- Interfaz de Juego -->
-    <div class="mt-6 w-full max-w-sm text-center">
-        <div id="cat" class="text-[10px] font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-tighter italic">Pista: ...</div>
+    <div class="w-full max-w-sm text-center">
+        <div id="cat" class="text-[10px] font-black text-green-700 bg-green-100 px-4 py-1 rounded-full mb-4 inline-block uppercase tracking-[0.2em]">Categoría</div>
+        <div id="word" class="flex justify-center gap-2 mb-8 text-3xl font-mono font-bold text-green-900 min-h-[40px]"></div>
         
-        <div id="word-display" class="flex justify-center gap-1 mb-6 text-3xl font-bold text-green-900 tracking-widest min-h-[40px]"></div>
-
-        <div id="keyboard" class="grid grid-cols-7 gap-1 mb-4"></div>
+        <!-- Teclado Visual -->
+        <div id="keyboard" class="grid grid-cols-7 gap-1.5 md:gap-2"></div>
         
-        <button id="next-btn" onclick="initGame()" class="hidden w-full bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg uppercase transition-all active:scale-95">Siguiente Palabra</button>
-        <button id="reset-btn" onclick="resetAll()" class="hidden w-full bg-red-500 text-white py-4 rounded-2xl font-bold shadow-lg uppercase">Reiniciar Juego</button>
+        <button id="next-btn" onclick="init()" class="hidden mt-8 bg-green-600 hover:bg-green-700 text-white w-full py-4 rounded-2xl font-black shadow-[0_4px_0_rgb(21,128,61)] active:shadow-none active:translate-y-1 transition-all uppercase">Siguiente</button>
     </div>
 
     <script>
-        // --- SONIDOS ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(freq, type, dur) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + dur);
-        }
+        const words = [
+            {w: "MANZANA", c: "FRUTA"}, {w: "GUITARRA", c: "MUSICA"}, {w: "ELEFANTE", c: "ANIMAL"},
+            {w: "COLOMBIA", c: "PAIS"}, {w: "BICICLETA", c: "VEHICULO"}, {w: "TIBURON", c: "MAR"},
+            {w: "HELADO", c: "POSTRE"}, {w: "MARTILLO", c: "HERRAMIENTA"}, {w: "PLANETA", c: "ESPACIO"}
+        ];
 
-        // --- DATOS Y LOGICA ---
-        const levels = {
-            1: { words: ["CASA", "PERRO", "SOL", "MESA"], cat: "Básico" },
-            2: { words: ["GUITARRA", "COLEGIO", "PLÁTANO", "ESPEJO"], cat: "Intermedio" },
-            3: { words: ["ASTRONAUTA", "BIBLIOTECA", "HELICÓPTERO"], cat: "Avanzado" }
-        };
+        let secret, letters, fails, score = 0;
 
-        let currentLevel = 1, score = 0, solvedInLevel = 0;
-        let secret, letters, fails, isOver = false;
-
-        function initGame() {
-            const levelData = levels[currentLevel] || levels[3];
-            const wordList = levelData.words;
-            secret = wordList[Math.floor(Math.random() * wordList.length)];
-            
-            document.getElementById('cat').textContent = "Pista: " + levelData.cat;
-            document.getElementById('level-display').textContent = currentLevel;
+        function init() {
+            const item = words[Math.floor(Math.random() * words.length)];
+            secret = item.w;
+            document.getElementById('cat').textContent = item.c;
+            letters = [];
+            fails = 0;
             document.getElementById('next-btn').classList.add('hidden');
-            document.getElementById('reset-btn').classList.add('hidden');
             document.getElementById('character').textContent = "😰";
-            
-            letters = []; fails = 0; isOver = false;
-            for(let i=1; i<=6; i++) {
-                const p = document.getElementById('p'+i);
-                p.classList.remove('visible');
-            }
-            render(); renderKeys();
+            document.getElementById('character').style.transform = "scale(1)";
+            for(let i=1; i<=6; i++) document.getElementById('p'+i).classList.remove('visible');
+            render();
+            renderKeys();
         }
 
         function render() {
             const display = secret.split('').map(l => letters.includes(l) ? l : "_").join(" ");
-            document.getElementById('word-display').textContent = display;
-            if(!display.includes("_") && !isOver) handleWin();
+            document.getElementById('word').textContent = display;
+            if(!display.includes("_")) win();
         }
 
         function renderKeys() {
@@ -155,60 +87,40 @@
             "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split('').forEach(l => {
                 const btn = document.createElement('button');
                 btn.textContent = l;
-                btn.className = "bg-white p-2 rounded shadow-sm font-bold text-green-700 text-sm disabled:opacity-20 transition-all active:bg-green-100";
-                btn.disabled = letters.includes(l) || isOver;
+                btn.className = "key-btn bg-white py-3 rounded-lg shadow-sm font-bold text-green-800 text-sm disabled:opacity-20 transition-transform";
+                btn.disabled = letters.includes(l) || fails >= 6;
                 btn.onclick = () => {
                     letters.push(l);
                     if(!secret.includes(l)) {
                         fails++;
-                        playSound(150, 'sawtooth', 0.2);
                         document.getElementById('p'+fails).classList.add('visible');
-                        if(fails >= 6) handleLoss();
-                    } else {
-                        playSound(600, 'sine', 0.1);
+                        if(fails >= 6) lose();
                     }
-                    render(); renderKeys();
+                    render();
+                    renderKeys();
                 };
                 kb.appendChild(btn);
             });
         }
 
-        function handleWin() {
-            isOver = true;
-            score += (currentLevel * 50);
-            solvedInLevel++;
-            document.getElementById('score-display').textContent = score;
+        function win() {
+            score += 100;
+            document.getElementById('score').textContent = score;
             document.getElementById('character').textContent = "😎";
-            
-            if(solvedInLevel >= 2) {
-                currentLevel++;
-                solvedInLevel = 0;
-            }
-            
-            document.getElementById('progress-bar').style.width = (solvedInLevel * 50) + "%";
+            document.getElementById('character').style.transform = "scale(1.2)";
             document.getElementById('next-btn').classList.remove('hidden');
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
-            playSound(800, 'sine', 0.3);
+            document.getElementById('next-btn').textContent = "¡OTRO ENVÍO!";
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.8 }, colors: ['#22c55e', '#ffffff', '#166534'] });
         }
 
-        function handleLoss() {
-            isOver = true;
+        function lose() {
             document.getElementById('character').textContent = "📦";
-            document.getElementById('word-display').textContent = secret;
-            document.getElementById('word-display').classList.add('text-red-600');
-            document.getElementById('reset-btn').classList.remove('hidden');
-            playSound(100, 'sawtooth', 0.5);
+            document.getElementById('word').textContent = secret;
+            document.getElementById('next-btn').classList.remove('hidden');
+            document.getElementById('next-btn').textContent = "REINTENTAR";
         }
 
-        function resetAll() {
-            currentLevel = 1; score = 0; solvedInLevel = 0;
-            document.getElementById('score-display').textContent = "0";
-            document.getElementById('progress-bar').style.width = "0%";
-            document.getElementById('word-display').classList.remove('text-red-600');
-            initGame();
-        }
-
-        initGame();
+        init();
     </script>
 </body>
 </html>
