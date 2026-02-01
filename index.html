@@ -3,14 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Envasado</title>
-    
-    <!-- Configuración Móvil -->
-    <meta name="theme-color" content="#f0fdf4">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Envasado">
-    <link rel="apple-touch-icon" href="https://em-content.zobj.net/source/apple/354/package_1f4e6.png">
+    <title>El Envasado - Nivel Pro</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -20,26 +13,44 @@
         .box-part { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(20px); pointer-events: none; }
         .box-part.visible { opacity: 1; transform: translateY(0); }
         .cardboard { background-color: #d4a373; border: 2px solid #9c6644; position: absolute; }
-        .key-btn { transition: all 0.1s; }
-        .key-btn:active { transform: scale(0.9); background-color: #dcfce7; }
-        #character { transition: all 0.5s ease; }
-        .char-container { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; z-index: 10; }
+        .key-btn { transition: all 0.1s; border-bottom: 3px solid #e2e8f0; }
+        .key-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+        #character { transition: all 0.5s ease; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1)); }
+        .level-up-anim { animation: levelUp 1s ease-out; }
+        @keyframes levelUp {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #166534; }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-between p-6 pb-12">
+<body class="h-screen flex flex-col items-center justify-between p-4 pb-8">
 
-    <!-- Marcador -->
-    <div class="text-center">
-        <h1 class="text-3xl font-black text-green-800 tracking-tighter">📦 EL ENVASADO</h1>
-        <div class="bg-white px-4 py-1 rounded-full shadow-sm inline-block mt-2 border border-green-100">
-            <span class="text-sm font-bold text-green-600 uppercase">Puntos: <span id="score">0</span></span>
+    <!-- Encabezado de Progreso -->
+    <div class="w-full max-w-md">
+        <div class="flex justify-between items-end mb-2">
+            <div>
+                <h1 class="text-2xl font-black text-green-800 tracking-tighter uppercase">📦 Envasado</h1>
+                <p class="text-[10px] font-bold text-green-600 bg-white px-2 py-0.5 rounded-full inline-block shadow-sm">NIVEL <span id="level-num">1</span></p>
+            </div>
+            <div class="text-right">
+                <span class="block text-[10px] font-bold text-gray-400 uppercase">Puntuación</span>
+                <span id="score" class="text-2xl font-black text-green-700">0</span>
+            </div>
         </div>
+        <!-- Barra de progreso para subir de nivel -->
+        <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden shadow-inner">
+            <div id="level-bar" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <p class="text-[9px] text-center mt-1 font-bold text-green-800 opacity-50 uppercase tracking-widest">
+            Adivina <span id="words-left">5</span> más para el siguiente nivel
+        </p>
     </div>
 
-    <!-- Contenedor de la Caja -->
-    <div class="relative w-64 h-64 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-green-50">
-        <div class="char-container">
-            <div id="character" class="text-8xl">😰</div>
+    <!-- Escena Central -->
+    <div class="relative w-56 h-56 md:w-64 md:h-64 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-white">
+        <div class="flex items-center justify-center w-full h-full relative z-10">
+            <div id="character" class="text-7xl md:text-8xl select-none">😰</div>
         </div>
         
         <div id="p1" class="box-part cardboard w-full bottom-0 h-1/5 z-20"></div>
@@ -52,123 +63,161 @@
         </div>
     </div>
 
-    <!-- Interfaz -->
+    <!-- Controles e Interfaz -->
     <div class="w-full max-w-sm text-center">
-        <div id="cat" class="text-[10px] font-black text-green-700 bg-green-100 px-4 py-1 rounded-full mb-4 inline-block uppercase tracking-widest">Cargando...</div>
-        <div id="word" class="flex justify-center gap-2 mb-8 text-3xl font-mono font-bold text-green-900 min-h-[40px]"></div>
+        <div id="cat" class="text-[10px] font-black text-green-700 bg-green-200 px-4 py-1 rounded-full mb-3 inline-block uppercase tracking-widest shadow-sm">...</div>
         
-        <div id="keyboard" class="grid grid-cols-7 gap-1.5 md:gap-2"></div>
+        <div id="word" class="flex justify-center gap-1.5 flex-wrap mb-6 text-2xl font-mono font-bold text-green-900 min-h-[40px]"></div>
         
-        <button id="next-btn" onclick="init()" class="hidden mt-8 bg-green-600 text-white w-full py-4 rounded-2xl font-black shadow-lg uppercase">Siguiente</button>
+        <div id="keyboard" class="grid grid-cols-7 gap-1.5"></div>
+        
+        <button id="next-btn" onclick="nextRound()" class="hidden mt-6 bg-green-600 text-white w-full py-4 rounded-2xl font-black shadow-lg uppercase active:scale-95 transition-transform">
+            Continuar
+        </button>
     </div>
 
     <script>
-        if ('serviceWorker' in navigator) {
-            const sw = 'self.addEventListener("fetch", (e) => {});';
-            const blob = new Blob([sw], {type: 'text/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+        // Banco de datos simplificado para el ejemplo (en el código real se expande con el objeto rawWords)
+        const rawWords = {
+            ANIMALES: ["TIGRE", "BALLENA", "AGUILA", "CEBRA", "DELFIN", "GORILA", "PULPO", "CONEJO", "LOBO", "KOALA"],
+            FRUTAS: ["MANGO", "SANDIA", "CEREZA", "PIÑA", "GUAYABA", "MELON", "PAPAYA", "KIWI", "FRESA", "CIRUELA"],
+            OBJETOS: ["RELOJ", "ESPEJO", "LAMPARA", "SILLA", "TECLADO", "CAMARA", "LIBRO", "MOCHILA", "PINTURA", "MALETA"],
+            ESPACIO: ["MARTE", "COMETA", "GALAXIA", "COHETE", "ESTRELLA", "ORBITA", "SATURNO", "LUNA", "PLANETA", "SIDEREO"],
+            DEPORTES: ["FUTBOL", "BOXEO", "NATACION", "TENIS", "GOLF", "KARATE", "RUGBY", "CICLISMO", "ESGRIMA", "ATLETISMO"]
+        };
+
+        let masterList = [];
+        let deck = [];
+        let currentWord = null;
+        let guessedLetters = [];
+        let fails = 0;
+        let score = 0;
+        let level = 1;
+        let correctThisLevel = 0;
+        const TARGET_PER_LEVEL = 5;
+
+        // Inicializar lista maestra
+        for (let cat in rawWords) {
+            rawWords[cat].forEach(w => masterList.push({ w: w, c: cat }));
         }
 
-        // Base de datos de palabras expandida (Quintuplicada)
-        const words = [
-            // FRUTAS
-            {w: "MANZANA", c: "FRUTA"}, {w: "BANANO", c: "FRUTA"}, {w: "NARANJA", c: "FRUTA"}, {w: "SANDIA", c: "FRUTA"}, {w: "CEREZA", c: "FRUTA"},
-            {w: "FRESA", c: "FRUTA"}, {w: "MANGO", c: "FRUTA"}, {w: "PIÑA", c: "FRUTA"}, {w: "LIMON", c: "FRUTA"}, {w: "UVA", c: "FRUTA"},
-            {w: "GUAYABA", c: "FRUTA"}, {w: "PERA", c: "FRUTA"}, {w: "MELON", c: "FRUTA"}, {w: "COCO", c: "FRUTA"}, {w: "MORA", c: "FRUTA"},
-            // ANIMALES
-            {w: "ELEFANTE", c: "ANIMAL"}, {w: "TIBURON", c: "ANIMAL"}, {w: "JIRAFA", c: "ANIMAL"}, {w: "CABALLO", c: "ANIMAL"}, {w: "CONEJO", c: "ANIMAL"},
-            {w: "BALLENA", c: "ANIMAL"}, {w: "TIGRE", c: "ANIMAL"}, {w: "PANTERA", c: "ANIMAL"}, {w: "DELFIN", c: "ANIMAL"}, {w: "AGUILA", c: "ANIMAL"},
-            {w: "SERPIENTE", c: "ANIMAL"}, {w: "PINGÜINO", c: "ANIMAL"}, {w: "MONO", c: "ANIMAL"}, {w: "LOBO", c: "ANIMAL"}, {w: "GATO", c: "ANIMAL"},
-            // PAISES
-            {w: "COLOMBIA", c: "PAIS"}, {w: "MEXICO", c: "PAIS"}, {w: "ESPAÑA", c: "PAIS"}, {w: "FRANCIA", c: "PAIS"}, {w: "BRASIL", c: "PAIS"},
-            {w: "ARGENTINA", c: "PAIS"}, {w: "CANADA", c: "PAIS"}, {w: "ITALIA", c: "PAIS"}, {w: "JAPON", c: "PAIS"}, {w: "ALEMANIA", c: "PAIS"},
-            {w: "CHILE", c: "PAIS"}, {w: "PERU", c: "PAIS"}, {w: "EGIPTO", c: "PAIS"}, {w: "RUSIA", c: "PAIS"}, {w: "CHINA", c: "PAIS"},
-            // OBJETOS / HOGAR
-            {w: "GUITARRA", c: "MUSICA"}, {w: "MARTILLO", c: "HERRAMIENTA"}, {w: "LAMPARA", c: "HOGAR"}, {w: "ESPEJO", c: "HOGAR"}, {w: "CUADERNO", c: "ESTUDIO"},
-            {w: "TELEVISOR", c: "HOGar"}, {w: "SILLA", c: "HOGAR"}, {w: "VENTANA", c: "CONSTRUCCION"}, {w: "RELOJ", c: "ACCESORIO"}, {w: "MOCHILA", c: "VIAJE"},
-            {w: "CELULAR", c: "TECNOLOGIA"}, {w: "PEINE", c: "BELLEZA"}, {w: "ALMOHADA", c: "DORMITORIO"}, {w: "CUADRO", c: "ARTE"}, {w: "LLAVE", c: "SEGURIDAD"},
-            // CIENCIA / ESPACIO
-            {w: "PLANETA", c: "ESPACIO"}, {w: "ESTRELLA", c: "ESPACIO"}, {w: "COMETA", c: "ESPACIO"}, {w: "COHETE", c: "ESPACIO"}, {w: "GALAXIA", c: "ESPACIO"},
-            {w: "TELESCOPIO", c: "CIENCIA"}, {w: "ATOMO", c: "CIENCIA"}, {w: "GRAVEDAD", c: "CIENCIA"}, {w: "OXIGENO", c: "CIENCIA"}, {w: "METEORITO", c: "ESPACIO"},
-            // DEPORTES
-            {w: "FUTBOL", c: "DEPORTE"}, {w: "NATACION", c: "DEPORTE"}, {w: "CICLISMO", c: "DEPORTE"}, {w: "TENIS", c: "DEPORTE"}, {w: "BOXEO", c: "DEPORTE"},
-            {w: "BEISBOL", c: "DEPORTE"}, {w: "GOLF", c: "DEPORTE"}, {w: "VOLEIBOL", c: "DEPORTE"}, {w: "ATLETISMO", c: "DEPORTE"}, {w: "ESGRIMA", c: "DEPORTE"},
-            // PROFESIONES
-            {w: "DOCTOR", c: "TRABAJO"}, {w: "MAESTRO", c: "TRABAJO"}, {w: "INGENIERO", c: "TRABAJO"}, {w: "BOMBERO", c: "TRABAJO"}, {w: "POLICIA", c: "TRABAJO"},
-            {w: "ARTISTA", c: "TRABAJO"}, {w: "COCINERO", c: "TRABAJO"}, {w: "PILOTO", c: "TRABAJO"}, {w: "DENTISTA", c: "TRABAJO"}, {w: "MUSICO", c: "TRABAJO"},
-            // COMIDA / COCINA
-            {w: "PIZZA", c: "COMIDA"}, {w: "HAMBURGUESA", c: "COMIDA"}, {w: "PASTA", c: "COMIDA"}, {w: "ENSALADA", c: "COMIDA"}, {w: "ARROZ", c: "COMIDA"},
-            {w: "SOPA", c: "COMIDA"}, {w: "QUESO", c: "COMIDA"}, {w: "HUEVO", c: "COMIDA"}, {w: "CHOCOLATE", c: "DULCE"}, {w: "CARAMELO", c: "DULCE"},
-            // TECNOLOGIA
-            {w: "INTERNET", c: "TECNOLOGIA"}, {w: "COMPUTADOR", c: "TECNOLOGIA"}, {w: "PANTALLA", c: "TECNOLOGIA"}, {w: "TECLADO", c: "TECNOLOGIA"}, {w: "MOUSE", c: "TECNOLOGIA"},
-            {w: "ROBOT", c: "TECNOLOGIA"}, {w: "CODIGO", c: "TECNOLOGIA"}, {w: "SOFTWARE", c: "TECNOLOGIA"}, {w: "BATERIA", c: "TECNOLOGIA"}, {w: "CAMARA", c: "TECNOLOGIA"},
-            // NATURALEZA
-            {w: "BOSQUE", c: "NATURALEZA"}, {w: "MONTAÑA", c: "NATURALEZA"}, {w: "DESIERTO", c: "NATURALEZA"}, {w: "OCEANO", c: "NATURALEZA"}, {w: "VOLCAN", c: "NATURALEZA"},
-            {w: "RIVER", c: "NATURALEZA"}, {w: "SELVA", c: "NATURALEZA"}, {w: "CASCADA", c: "NATURALEZA"}, {w: "CUEVA", c: "NATURALEZA"}, {w: "PRADERA", c: "NATURALEZA"}
-        ];
+        function shuffleDeck() {
+            deck = [...masterList].sort(() => Math.random() - 0.5);
+        }
 
-        let secret, letters, fails, score = 0;
-        let lastWord = "";
+        function initGame() {
+            shuffleDeck();
+            loadNewWord();
+        }
 
-        function init() {
-            let item;
-            do {
-                item = words[Math.floor(Math.random() * words.length)];
-            } while (item.w === lastWord);
+        function loadNewWord() {
+            if (deck.length === 0) shuffleDeck(); // Recargar si se acaban todas
             
-            lastWord = item.w;
-            secret = item.w;
-            document.getElementById('cat').textContent = item.c;
-            letters = []; fails = 0;
+            currentWord = deck.pop();
+            guessedLetters = [];
+            fails = 0;
+            
             document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('cat').textContent = currentWord.c;
             document.getElementById('character').textContent = "😰";
+            
             for(let i=1; i<=6; i++) document.getElementById('p'+i).classList.remove('visible');
-            render(); renderKeys();
+            
+            renderWord();
+            renderKeyboard();
+            updateUI();
         }
 
-        function render() {
-            const display = secret.split('').map(l => letters.includes(l) ? l : "_").join(" ");
-            document.getElementById('word').textContent = display;
-            if(!display.includes("_")) win();
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('level-num').textContent = level;
+            document.getElementById('words-left').textContent = TARGET_PER_LEVEL - correctThisLevel;
+            
+            const progress = (correctThisLevel / TARGET_PER_LEVEL) * 100;
+            document.getElementById('level-bar').style.width = progress + "%";
         }
 
-        function renderKeys() {
+        function renderWord() {
+            const container = document.getElementById('word');
+            container.innerHTML = '';
+            
+            let won = true;
+            currentWord.w.split('').forEach(l => {
+                const span = document.createElement('span');
+                span.className = "border-b-4 px-1 min-w-[20px]";
+                if (guessedLetters.includes(l)) {
+                    span.textContent = l;
+                    span.classList.add('border-green-800');
+                } else {
+                    span.textContent = "_";
+                    span.classList.add('border-transparent');
+                    won = false;
+                }
+                container.appendChild(span);
+            });
+
+            if (won) handleWin();
+        }
+
+        function renderKeyboard() {
             const kb = document.getElementById('keyboard');
             kb.innerHTML = '';
             "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split('').forEach(l => {
                 const btn = document.createElement('button');
                 btn.textContent = l;
-                btn.className = "key-btn bg-white py-3 rounded-lg shadow-sm font-bold text-green-800 text-sm disabled:opacity-20";
-                btn.disabled = letters.includes(l) || fails >= 6;
+                btn.className = "key-btn bg-white py-3 rounded-xl shadow-sm font-bold text-green-800 text-sm disabled:opacity-30";
+                btn.disabled = guessedLetters.includes(l) || fails >= 6;
                 btn.onclick = () => {
-                    letters.push(l);
-                    if(!secret.includes(l)) {
+                    guessedLetters.push(l);
+                    if (!currentWord.w.includes(l)) {
                         fails++;
-                        document.getElementById('p'+fails).classList.add('visible');
-                        if(fails >= 6) lose();
+                        document.getElementById('p' + fails).classList.add('visible');
+                        if (fails >= 6) handleLoss();
                     }
-                    render(); renderKeys();
+                    renderWord();
+                    renderKeyboard();
                 };
                 kb.appendChild(btn);
             });
         }
 
-        function win() {
-            score += 100;
-            document.getElementById('score').textContent = score;
+        function handleWin() {
+            score += (level * 100);
+            correctThisLevel++;
             document.getElementById('character').textContent = "😎";
-            document.getElementById('next-btn').classList.remove('hidden');
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
+            
+            if (correctThisLevel >= TARGET_PER_LEVEL) {
+                level++;
+                correctThisLevel = 0;
+                document.getElementById('level-num').classList.add('level-up-anim');
+                setTimeout(() => document.getElementById('level-num').classList.remove('level-up-anim'), 1000);
+                confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
+            } else {
+                confetti({ particleCount: 80, spread: 50, origin: { y: 0.7 } });
+            }
+            
+            finishRound("¡ENVASADO CON ÉXITO!");
         }
 
-        function lose() {
+        function handleLoss() {
             document.getElementById('character').textContent = "📦";
-            document.getElementById('word').textContent = secret;
-            document.getElementById('next-btn').classList.remove('hidden');
-            document.getElementById('next-btn').textContent = "REINTENTAR";
+            const container = document.getElementById('word');
+            container.innerHTML = `<span class="text-red-600">${currentWord.w}</span>`;
+            finishRound("¡A LA BODEGA!");
         }
 
-        init();
+        function finishRound(msg) {
+            const btn = document.getElementById('next-btn');
+            btn.textContent = msg + " - SIGUIENTE";
+            btn.classList.remove('hidden');
+            updateUI();
+        }
+
+        function nextRound() {
+            loadNewWord();
+        }
+
+        initGame();
     </script>
 </body>
 </html>
