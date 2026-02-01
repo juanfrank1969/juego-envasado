@@ -3,60 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Juego del Envasado</title>
+    <title>El Envasado</title>
+    
+    <!-- Configuración Móvil -->
+    <meta name="theme-color" content="#f0fdf4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Envasado">
+    <link rel="apple-touch-icon" href="https://em-content.zobj.net/source/apple/354/package_1f4e6.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <style>
         body { background-color: #f0fdf4; font-family: ui-sans-serif, system-ui, sans-serif; overflow: hidden; touch-action: manipulation; }
         .box-part { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(20px); pointer-events: none; }
         .box-part.visible { opacity: 1; transform: translateY(0); }
         .cardboard { background-color: #d4a373; border: 2px solid #9c6644; position: absolute; }
+        .key-btn { transition: all 0.1s; }
         .key-btn:active { transform: scale(0.9); background-color: #dcfce7; }
+        #character { transition: all 0.5s ease; }
     </style>
 </head>
 <body class="h-screen flex flex-col items-center justify-between p-6 pb-12">
 
-    <!-- Encabezado -->
+    <!-- Marcador -->
     <div class="text-center">
         <h1 class="text-3xl font-black text-green-800 tracking-tighter">📦 EL ENVASADO</h1>
-        <div class="bg-white px-4 py-1 rounded-full shadow-sm inline-block mt-2">
-            <span class="text-sm font-bold text-green-600">PUNTOS: <span id="score">0</span></span>
+        <div class="bg-white px-4 py-1 rounded-full shadow-sm inline-block mt-2 border border-green-100">
+            <span class="text-sm font-bold text-green-600 uppercase">Puntos: <span id="score">0</span></span>
         </div>
     </div>
 
-    <!-- Contenedor Visual -->
-    <div class="relative w-64 h-64 bg-white rounded-[2rem] shadow-2xl flex items-center justify-center overflow-hidden border-8 border-green-50">
-        <div id="character" class="text-8xl z-10 transition-all duration-500">😰</div>
+    <!-- Contenedor de la Caja -->
+    <div class="relative w-64 h-64 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center overflow-hidden border-8 border-green-50">
+        <div id="character" class="text-8xl z-10">😰</div>
         
-        <!-- Elementos de la Caja -->
         <div id="p1" class="box-part cardboard w-full bottom-0 h-1/5 z-0"></div>
         <div id="p2" class="box-part cardboard w-full h-full bottom-0 bg-[#ccb7a3] z-0"></div>
         <div id="p3" class="box-part cardboard h-full left-0 w-1/5 z-20"></div>
         <div id="p4" class="box-part cardboard h-full right-0 w-1/5 z-20"></div>
         <div id="p5" class="box-part cardboard w-full bottom-0 h-3/5 z-30 opacity-95"></div>
         <div id="p6" class="box-part cardboard w-full h-full top-0 z-40 flex items-center justify-center bg-[#8d5c3d]">
-            <div class="border-4 border-white/30 p-2 rounded-lg">
-                <span class="text-white font-black text-xl tracking-widest uppercase">Sellado</span>
-            </div>
+            <div class="border-4 border-white/30 p-2 rounded-lg text-white font-black uppercase tracking-widest">Listo</div>
         </div>
     </div>
 
-    <!-- Interfaz de Juego -->
+    <!-- Interfaz -->
     <div class="w-full max-w-sm text-center">
-        <div id="cat" class="text-[10px] font-black text-green-700 bg-green-100 px-4 py-1 rounded-full mb-4 inline-block uppercase tracking-[0.2em]">Categoría</div>
+        <div id="cat" class="text-[10px] font-black text-green-700 bg-green-100 px-4 py-1 rounded-full mb-4 inline-block uppercase tracking-widest">Cargando...</div>
         <div id="word" class="flex justify-center gap-2 mb-8 text-3xl font-mono font-bold text-green-900 min-h-[40px]"></div>
         
-        <!-- Teclado Visual -->
         <div id="keyboard" class="grid grid-cols-7 gap-1.5 md:gap-2"></div>
         
-        <button id="next-btn" onclick="init()" class="hidden mt-8 bg-green-600 hover:bg-green-700 text-white w-full py-4 rounded-2xl font-black shadow-[0_4px_0_rgb(21,128,61)] active:shadow-none active:translate-y-1 transition-all uppercase">Siguiente</button>
+        <button id="next-btn" onclick="init()" class="hidden mt-8 bg-green-600 text-white w-full py-4 rounded-2xl font-black shadow-lg uppercase">Siguiente</button>
     </div>
 
     <script>
+        // Service Worker silencioso para habilitar instalación PWA
+        if ('serviceWorker' in navigator) {
+            const sw = 'self.addEventListener("fetch", (e) => {});';
+            const blob = new Blob([sw], {type: 'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+        }
+
         const words = [
             {w: "MANZANA", c: "FRUTA"}, {w: "GUITARRA", c: "MUSICA"}, {w: "ELEFANTE", c: "ANIMAL"},
-            {w: "COLOMBIA", c: "PAIS"}, {w: "BICICLETA", c: "VEHICULO"}, {w: "TIBURON", c: "MAR"},
-            {w: "HELADO", c: "POSTRE"}, {w: "MARTILLO", c: "HERRAMIENTA"}, {w: "PLANETA", c: "ESPACIO"}
+            {w: "COLOMBIA", c: "PAIS"}, {w: "TIBURON", c: "MAR"}, {w: "PLANETA", c: "ESPACIO"}
         ];
 
         let secret, letters, fails, score = 0;
@@ -65,14 +78,11 @@
             const item = words[Math.floor(Math.random() * words.length)];
             secret = item.w;
             document.getElementById('cat').textContent = item.c;
-            letters = [];
-            fails = 0;
+            letters = []; fails = 0;
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('character').textContent = "😰";
-            document.getElementById('character').style.transform = "scale(1)";
             for(let i=1; i<=6; i++) document.getElementById('p'+i).classList.remove('visible');
-            render();
-            renderKeys();
+            render(); renderKeys();
         }
 
         function render() {
@@ -87,8 +97,7 @@
             "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split('').forEach(l => {
                 const btn = document.createElement('button');
                 btn.textContent = l;
-                btn.className = "key-btn bg-white py-3 rounded-lg shadow-sm font-bold text-green-800 text-sm disabled:opacity-20 transition-transform";
-                btn.disabled = letters.includes(l) || fails >= 6;
+                btn.className = "key-btn bg-white py-3 rounded-lg shadow-sm font-bold text-green-800 text-sm disabled:opacity-20";
                 btn.onclick = () => {
                     letters.push(l);
                     if(!secret.includes(l)) {
@@ -96,8 +105,7 @@
                         document.getElementById('p'+fails).classList.add('visible');
                         if(fails >= 6) lose();
                     }
-                    render();
-                    renderKeys();
+                    render(); renderKeys();
                 };
                 kb.appendChild(btn);
             });
@@ -107,10 +115,8 @@
             score += 100;
             document.getElementById('score').textContent = score;
             document.getElementById('character').textContent = "😎";
-            document.getElementById('character').style.transform = "scale(1.2)";
             document.getElementById('next-btn').classList.remove('hidden');
-            document.getElementById('next-btn').textContent = "¡OTRO ENVÍO!";
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.8 }, colors: ['#22c55e', '#ffffff', '#166534'] });
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
         }
 
         function lose() {
