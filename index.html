@@ -23,6 +23,8 @@
         .key-btn { transition: all 0.1s; }
         .key-btn:active { transform: scale(0.9); background-color: #dcfce7; }
         #character { transition: all 0.5s ease; }
+        /* Ajuste para evitar efecto de corte en el emoji */
+        .char-container { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; z-index: 10; }
     </style>
 </head>
 <body class="h-screen flex flex-col items-center justify-between p-6 pb-12">
@@ -36,15 +38,19 @@
     </div>
 
     <!-- Contenedor de la Caja -->
-    <div class="relative w-64 h-64 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center overflow-hidden border-8 border-green-50">
-        <div id="character" class="text-8xl z-10">😰</div>
+    <div class="relative w-64 h-64 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-green-50">
+        <!-- Contenedor del personaje para evitar cortes visuales -->
+        <div class="char-container">
+            <div id="character" class="text-8xl">😰</div>
+        </div>
         
-        <div id="p1" class="box-part cardboard w-full bottom-0 h-1/5 z-0"></div>
-        <div id="p2" class="box-part cardboard w-full h-full bottom-0 bg-[#ccb7a3] z-0"></div>
-        <div id="p3" class="box-part cardboard h-full left-0 w-1/5 z-20"></div>
-        <div id="p4" class="box-part cardboard h-full right-0 w-1/5 z-20"></div>
-        <div id="p5" class="box-part cardboard w-full bottom-0 h-3/5 z-30 opacity-95"></div>
-        <div id="p6" class="box-part cardboard w-full h-full top-0 z-40 flex items-center justify-center bg-[#8d5c3d]">
+        <!-- Partes de la caja que cubren al personaje -->
+        <div id="p1" class="box-part cardboard w-full bottom-0 h-1/5 z-20"></div>
+        <div id="p2" class="box-part cardboard w-full h-full bottom-0 bg-[#ccb7a3] z-10"></div>
+        <div id="p3" class="box-part cardboard h-full left-0 w-1/5 z-30"></div>
+        <div id="p4" class="box-part cardboard h-full right-0 w-1/5 z-30"></div>
+        <div id="p5" class="box-part cardboard w-full bottom-0 h-3/5 z-40 opacity-95"></div>
+        <div id="p6" class="box-part cardboard w-full h-full top-0 z-50 flex items-center justify-center bg-[#8d5c3d]">
             <div class="border-4 border-white/30 p-2 rounded-lg text-white font-black uppercase tracking-widest">Listo</div>
         </div>
     </div>
@@ -81,6 +87,7 @@
             letters = []; fails = 0;
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('character').textContent = "😰";
+            // Reiniciar visibilidad de las partes de la caja
             for(let i=1; i<=6; i++) document.getElementById('p'+i).classList.remove('visible');
             render(); renderKeys();
         }
@@ -98,6 +105,7 @@
                 const btn = document.createElement('button');
                 btn.textContent = l;
                 btn.className = "key-btn bg-white py-3 rounded-lg shadow-sm font-bold text-green-800 text-sm disabled:opacity-20";
+                btn.disabled = letters.includes(l) || fails >= 6;
                 btn.onclick = () => {
                     letters.push(l);
                     if(!secret.includes(l)) {
@@ -126,8 +134,10 @@
             document.getElementById('next-btn').textContent = "REINTENTAR";
         }
 
+        // Arrancar juego
         init();
     </script>
 </body>
 </html>
+
 
