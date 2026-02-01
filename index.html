@@ -23,7 +23,6 @@
         .key-btn { transition: all 0.1s; }
         .key-btn:active { transform: scale(0.9); background-color: #dcfce7; }
         #character { transition: all 0.5s ease; }
-        /* Ajuste para evitar efecto de corte en el emoji */
         .char-container { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; z-index: 10; }
     </style>
 </head>
@@ -39,12 +38,10 @@
 
     <!-- Contenedor de la Caja -->
     <div class="relative w-64 h-64 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-green-50">
-        <!-- Contenedor del personaje para evitar cortes visuales -->
         <div class="char-container">
             <div id="character" class="text-8xl">😰</div>
         </div>
         
-        <!-- Partes de la caja que cubren al personaje -->
         <div id="p1" class="box-part cardboard w-full bottom-0 h-1/5 z-20"></div>
         <div id="p2" class="box-part cardboard w-full h-full bottom-0 bg-[#ccb7a3] z-10"></div>
         <div id="p3" class="box-part cardboard h-full left-0 w-1/5 z-30"></div>
@@ -66,28 +63,65 @@
     </div>
 
     <script>
-        // Service Worker silencioso para habilitar instalación PWA
         if ('serviceWorker' in navigator) {
             const sw = 'self.addEventListener("fetch", (e) => {});';
             const blob = new Blob([sw], {type: 'text/javascript'});
             navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
         }
 
+        // Base de datos de palabras expandida (Quintuplicada)
         const words = [
-            {w: "MANZANA", c: "FRUTA"}, {w: "GUITARRA", c: "MUSICA"}, {w: "ELEFANTE", c: "ANIMAL"},
-            {w: "COLOMBIA", c: "PAIS"}, {w: "TIBURON", c: "MAR"}, {w: "PLANETA", c: "ESPACIO"}
+            // FRUTAS
+            {w: "MANZANA", c: "FRUTA"}, {w: "BANANO", c: "FRUTA"}, {w: "NARANJA", c: "FRUTA"}, {w: "SANDIA", c: "FRUTA"}, {w: "CEREZA", c: "FRUTA"},
+            {w: "FRESA", c: "FRUTA"}, {w: "MANGO", c: "FRUTA"}, {w: "PIÑA", c: "FRUTA"}, {w: "LIMON", c: "FRUTA"}, {w: "UVA", c: "FRUTA"},
+            {w: "GUAYABA", c: "FRUTA"}, {w: "PERA", c: "FRUTA"}, {w: "MELON", c: "FRUTA"}, {w: "COCO", c: "FRUTA"}, {w: "MORA", c: "FRUTA"},
+            // ANIMALES
+            {w: "ELEFANTE", c: "ANIMAL"}, {w: "TIBURON", c: "ANIMAL"}, {w: "JIRAFA", c: "ANIMAL"}, {w: "CABALLO", c: "ANIMAL"}, {w: "CONEJO", c: "ANIMAL"},
+            {w: "BALLENA", c: "ANIMAL"}, {w: "TIGRE", c: "ANIMAL"}, {w: "PANTERA", c: "ANIMAL"}, {w: "DELFIN", c: "ANIMAL"}, {w: "AGUILA", c: "ANIMAL"},
+            {w: "SERPIENTE", c: "ANIMAL"}, {w: "PINGÜINO", c: "ANIMAL"}, {w: "MONO", c: "ANIMAL"}, {w: "LOBO", c: "ANIMAL"}, {w: "GATO", c: "ANIMAL"},
+            // PAISES
+            {w: "COLOMBIA", c: "PAIS"}, {w: "MEXICO", c: "PAIS"}, {w: "ESPAÑA", c: "PAIS"}, {w: "FRANCIA", c: "PAIS"}, {w: "BRASIL", c: "PAIS"},
+            {w: "ARGENTINA", c: "PAIS"}, {w: "CANADA", c: "PAIS"}, {w: "ITALIA", c: "PAIS"}, {w: "JAPON", c: "PAIS"}, {w: "ALEMANIA", c: "PAIS"},
+            {w: "CHILE", c: "PAIS"}, {w: "PERU", c: "PAIS"}, {w: "EGIPTO", c: "PAIS"}, {w: "RUSIA", c: "PAIS"}, {w: "CHINA", c: "PAIS"},
+            // OBJETOS / HOGAR
+            {w: "GUITARRA", c: "MUSICA"}, {w: "MARTILLO", c: "HERRAMIENTA"}, {w: "LAMPARA", c: "HOGAR"}, {w: "ESPEJO", c: "HOGAR"}, {w: "CUADERNO", c: "ESTUDIO"},
+            {w: "TELEVISOR", c: "HOGar"}, {w: "SILLA", c: "HOGAR"}, {w: "VENTANA", c: "CONSTRUCCION"}, {w: "RELOJ", c: "ACCESORIO"}, {w: "MOCHILA", c: "VIAJE"},
+            {w: "CELULAR", c: "TECNOLOGIA"}, {w: "PEINE", c: "BELLEZA"}, {w: "ALMOHADA", c: "DORMITORIO"}, {w: "CUADRO", c: "ARTE"}, {w: "LLAVE", c: "SEGURIDAD"},
+            // CIENCIA / ESPACIO
+            {w: "PLANETA", c: "ESPACIO"}, {w: "ESTRELLA", c: "ESPACIO"}, {w: "COMETA", c: "ESPACIO"}, {w: "COHETE", c: "ESPACIO"}, {w: "GALAXIA", c: "ESPACIO"},
+            {w: "TELESCOPIO", c: "CIENCIA"}, {w: "ATOMO", c: "CIENCIA"}, {w: "GRAVEDAD", c: "CIENCIA"}, {w: "OXIGENO", c: "CIENCIA"}, {w: "METEORITO", c: "ESPACIO"},
+            // DEPORTES
+            {w: "FUTBOL", c: "DEPORTE"}, {w: "NATACION", c: "DEPORTE"}, {w: "CICLISMO", c: "DEPORTE"}, {w: "TENIS", c: "DEPORTE"}, {w: "BOXEO", c: "DEPORTE"},
+            {w: "BEISBOL", c: "DEPORTE"}, {w: "GOLF", c: "DEPORTE"}, {w: "VOLEIBOL", c: "DEPORTE"}, {w: "ATLETISMO", c: "DEPORTE"}, {w: "ESGRIMA", c: "DEPORTE"},
+            // PROFESIONES
+            {w: "DOCTOR", c: "TRABAJO"}, {w: "MAESTRO", c: "TRABAJO"}, {w: "INGENIERO", c: "TRABAJO"}, {w: "BOMBERO", c: "TRABAJO"}, {w: "POLICIA", c: "TRABAJO"},
+            {w: "ARTISTA", c: "TRABAJO"}, {w: "COCINERO", c: "TRABAJO"}, {w: "PILOTO", c: "TRABAJO"}, {w: "DENTISTA", c: "TRABAJO"}, {w: "MUSICO", c: "TRABAJO"},
+            // COMIDA / COCINA
+            {w: "PIZZA", c: "COMIDA"}, {w: "HAMBURGUESA", c: "COMIDA"}, {w: "PASTA", c: "COMIDA"}, {w: "ENSALADA", c: "COMIDA"}, {w: "ARROZ", c: "COMIDA"},
+            {w: "SOPA", c: "COMIDA"}, {w: "QUESO", c: "COMIDA"}, {w: "HUEVO", c: "COMIDA"}, {w: "CHOCOLATE", c: "DULCE"}, {w: "CARAMELO", c: "DULCE"},
+            // TECNOLOGIA
+            {w: "INTERNET", c: "TECNOLOGIA"}, {w: "COMPUTADOR", c: "TECNOLOGIA"}, {w: "PANTALLA", c: "TECNOLOGIA"}, {w: "TECLADO", c: "TECNOLOGIA"}, {w: "MOUSE", c: "TECNOLOGIA"},
+            {w: "ROBOT", c: "TECNOLOGIA"}, {w: "CODIGO", c: "TECNOLOGIA"}, {w: "SOFTWARE", c: "TECNOLOGIA"}, {w: "BATERIA", c: "TECNOLOGIA"}, {w: "CAMARA", c: "TECNOLOGIA"},
+            // NATURALEZA
+            {w: "BOSQUE", c: "NATURALEZA"}, {w: "MONTAÑA", c: "NATURALEZA"}, {w: "DESIERTO", c: "NATURALEZA"}, {w: "OCEANO", c: "NATURALEZA"}, {w: "VOLCAN", c: "NATURALEZA"},
+            {w: "RIVER", c: "NATURALEZA"}, {w: "SELVA", c: "NATURALEZA"}, {w: "CASCADA", c: "NATURALEZA"}, {w: "CUEVA", c: "NATURALEZA"}, {w: "PRADERA", c: "NATURALEZA"}
         ];
 
         let secret, letters, fails, score = 0;
+        let lastWord = "";
 
         function init() {
-            const item = words[Math.floor(Math.random() * words.length)];
+            let item;
+            do {
+                item = words[Math.floor(Math.random() * words.length)];
+            } while (item.w === lastWord);
+            
+            lastWord = item.w;
             secret = item.w;
             document.getElementById('cat').textContent = item.c;
             letters = []; fails = 0;
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('character').textContent = "😰";
-            // Reiniciar visibilidad de las partes de la caja
             for(let i=1; i<=6; i++) document.getElementById('p'+i).classList.remove('visible');
             render(); renderKeys();
         }
@@ -134,7 +168,6 @@
             document.getElementById('next-btn').textContent = "REINTENTAR";
         }
 
-        // Arrancar juego
         init();
     </script>
 </body>
