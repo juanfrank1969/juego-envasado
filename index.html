@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Envasado - 3 Vidas</title>
+    <title>¡A Salvo! - El Juego de la Caja</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -32,7 +32,7 @@
     <div class="w-full max-w-md">
         <div class="flex justify-between items-end mb-2">
             <div>
-                <h1 class="text-2xl font-black text-green-800 tracking-tighter uppercase">📦 Envasado</h1>
+                <h1 class="text-2xl font-black text-green-800 tracking-tighter uppercase">🛡️ ¡A SALVO!</h1>
                 <div class="flex gap-2 items-center mt-1">
                     <p class="text-[10px] font-bold text-green-600 bg-white px-2 py-0.5 rounded-full inline-block shadow-sm">NIVEL <span id="level-num">1</span></p>
                     <div id="lives-container" class="flex gap-1 ml-2">
@@ -68,7 +68,7 @@
         <div id="p4" class="box-part cardboard h-full right-0 w-1/5 z-30"></div>
         <div id="p5" class="box-part cardboard w-full bottom-0 h-3/5 z-40 opacity-95"></div>
         <div id="p6" class="box-part cardboard w-full h-full top-0 z-50 flex items-center justify-center bg-[#8d5c3d]">
-            <div class="border-4 border-white/30 p-2 rounded-lg text-white font-black uppercase tracking-widest">Listo</div>
+            <div class="border-4 border-white/30 p-2 rounded-lg text-white font-black uppercase tracking-widest">Atrapado</div>
         </div>
     </div>
 
@@ -123,17 +123,13 @@
 
         function loadNewWord() {
             if (deck.length === 0) shuffleDeck();
-            
             currentWord = deck.pop();
             guessedLetters = [];
             fails = 0;
-            
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('cat').textContent = currentWord.c;
             document.getElementById('character').textContent = "😰";
-            
             for(let i=1; i<=6; i++) document.getElementById('p'+i).classList.remove('visible');
-            
             renderWord();
             renderKeyboard();
             updateUI();
@@ -142,27 +138,18 @@
         function updateUI() {
             document.getElementById('score').textContent = score;
             document.getElementById('level-num').textContent = level;
-            
-            // Lógica de progreso por puntos
             const targetPoints = level * SCORE_PER_LEVEL;
             const progressPercent = ((score % SCORE_PER_LEVEL) / SCORE_PER_LEVEL) * 100;
-            
             document.getElementById('level-bar').style.width = progressPercent + "%";
             document.getElementById('points-needed').textContent = targetPoints;
-
-            if (score >= targetPoints) {
-                levelUp();
-            }
+            if (score >= targetPoints) levelUp();
         }
 
         function updateLivesUI() {
             const hearts = document.querySelectorAll('.life-heart');
             hearts.forEach((heart, index) => {
-                if (index >= lives) {
-                    heart.classList.add('life-lost');
-                } else {
-                    heart.classList.remove('life-lost');
-                }
+                if (index >= lives) heart.classList.add('life-lost');
+                else heart.classList.remove('life-lost');
             });
         }
 
@@ -176,7 +163,6 @@
         function renderWord() {
             const container = document.getElementById('word');
             container.innerHTML = '';
-            
             let won = true;
             currentWord.w.split('').forEach(l => {
                 const span = document.createElement('span');
@@ -191,7 +177,6 @@
                 }
                 container.appendChild(span);
             });
-
             if (won) handleWin();
         }
 
@@ -221,7 +206,7 @@
             score += 100;
             document.getElementById('character').textContent = "😎";
             confetti({ particleCount: 80, spread: 50, origin: { y: 0.7 } });
-            finishRound("¡ENVASADO CON ÉXITO!");
+            finishRound("¡ESTÁS A SALVO!");
         }
 
         function handleLoss() {
@@ -230,12 +215,8 @@
             document.getElementById('character').textContent = "📦";
             const container = document.getElementById('word');
             container.innerHTML = `<span class="text-red-600 font-black">${currentWord.w}</span>`;
-            
-            if (lives <= 0) {
-                finishRound("GAME OVER - REINICIAR");
-            } else {
-                finishRound("PERDISTE UNA VIDA");
-            }
+            if (lives <= 0) finishRound("¡ATRAPADO! REINICIAR");
+            else finishRound("HAS PERDIDO UNA VIDA");
         }
 
         function finishRound(msg) {
@@ -246,11 +227,8 @@
         }
 
         function nextRound() {
-            if (lives <= 0) {
-                initGame();
-            } else {
-                loadNewWord();
-            }
+            if (lives <= 0) initGame();
+            else loadNewWord();
         }
 
         initGame();
